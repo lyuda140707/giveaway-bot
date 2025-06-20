@@ -29,6 +29,7 @@ sheet = sheet_service.spreadsheets()
 bot = Bot(token=BOT_TOKEN)
 Bot.set_current(bot)  # <-- додай це!
 dp = Dispatcher(bot)
+Dispatcher.set_current(dp)  # <--- І ЦЕ!
 
 CHANNELS = {
     "kino": "@KinoTochkaUA",
