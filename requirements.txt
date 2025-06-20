@@ -6,3 +6,5 @@ google-auth-httplib2
 fastapi
 uvicorn
 aiohttp<3.9.0
+requests
+certifi
