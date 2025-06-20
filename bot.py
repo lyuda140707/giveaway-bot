@@ -104,19 +104,36 @@ async def handle_start(message: types.Message):
     args = message.get_args()
     referral_info = args if args else None
 
-    if referral_info:
-        if "_" in referral_info:
-            prefix, ref_id = referral_info.split("_", 1)
-            channel_key = prefix if prefix in CHANNELS else None
-            if channel_key:
-                channel_username = CHANNELS[channel_key]
-                if await check_subscription(message.from_user.id, channel_username):
-                    update_user_data(ref_id, "", channel_key, str(message.from_user.id))
-                    await message.answer("✅ Ви підписались через реферальне посилання. Вашого друга зараховано!")
-                else:
-                    await message.answer(f"❗ Спочатку підпишіться на {channel_username}, щоб бути зарахованим.")
-                return
+    # Якщо користувач зайшов по чужому посиланню
+    if referral_info and "_" in referral_info:
+        prefix, ref_id = referral_info.split("_", 1)
+        channel_key = prefix if prefix in CHANNELS else None
 
+        if channel_key:
+            channel_username = CHANNELS[channel_key]
+
+            # Перевірка підписки
+            if await check_subscription(message.from_user.id, channel_username):
+                # Зараховуємо цього користувача як друга для реферера
+                update_user_data(ref_id, "", channel_key, str(message.from_user.id))
+
+                # Показуємо тепер йому його особисте посилання
+                link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{message.from_user.id}"
+                kb = InlineKeyboardMarkup().add(
+                    InlineKeyboardButton(text="Запросити друзів", url=link)
+                )
+
+                await message.answer(
+                    "✅ Вас зараховано до участі!\n\nТепер запросіть 3 друзів через своє унікальне посилання:",
+                    reply_markup=kb
+                )
+            else:
+                await message.answer(
+                    f"❗ Щоб взяти участь, підпишіться на {channel_username} і знову натисніть на посилання."
+                )
+            return  # Виходимо, не показуємо стартове меню
+
+    # Якщо користувач зайшов напряму (без посилання або сам)
     kb = InlineKeyboardMarkup(row_width=1)
     for key, ch in CHANNELS.items():
         link = f"https://t.me/GiveawayKinoBot?start={key}_{message.from_user.id}"
@@ -126,6 +143,7 @@ async def handle_start(message: types.Message):
         "🎉 Вітаю у розіграші Telegram Premium!\n\nПідпишись на канал і запроси 3 друзів, щоб взяти участь.\n\nОбери канал і отримай своє унікальне посилання:",
         reply_markup=kb
     )
+
 
 
 WEBHOOK_PATH = "/webhook"
