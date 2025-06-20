@@ -8,6 +8,8 @@ import uvicorn
 
 from fastapi import FastAPI, Request
 from aiogram.types import Update
+from fastapi import Response
+
 
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -121,9 +123,9 @@ async def process_webhook(request: Request):
     await dp.process_update(update)
     return {"ok": True}
     
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
-    return {"status": "ok"}
+    return Response(content='{"status":"ok"}', media_type="application/json")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))  # Render сам задасть PORT
