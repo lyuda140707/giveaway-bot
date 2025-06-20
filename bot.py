@@ -5,15 +5,11 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import uvicorn
 import asyncio
 
-
-from fastapi import FastAPI, Request
 from aiogram import types
-from fastapi import Response
-
-
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -110,35 +106,28 @@ async def handle_start(message: types.Message):
         reply_markup=kb
     )
 
-# === FastAPI Webhook Server ===
-app = FastAPI()
+from aiogram.utils.executor import start_webhook    
 
-@app.on_event("startup")
-async def on_startup():
+WEBHOOK_PATH = "/webhook"
+WEBAPP_HOST = "0.0.0.0"
+WEBAPP_PORT = int(os.environ.get("PORT", 8000))
+
+async def on_startup(dp):
     logging.info("🚀 Стартуємо Webhook...")
-    await bot.set_webhook(f"{WEBHOOK_URL}/webhook")
-    logging.info(f"Webhook встановлено: {WEBHOOK_URL}/webhook")
-    
+    await bot.set_webhook(WEBHOOK_URL + WEBHOOK_PATH)
+    logging.info(f"Webhook встановлено: {WEBHOOK_URL + WEBHOOK_PATH}")
 
-@app.on_event("shutdown")
-async def on_shutdown():
+async def on_shutdown(dp):
+    logging.info("❌ Видаляємо webhook...")
     await bot.delete_webhook()
-    logging.info("Webhook видалено")
 
-
-@app.post("/webhook")
-async def telegram_webhook(request: Request):
-    data = await request.json()
-    update = types.Update(**data)
-    await dp.process_update(update)
-    return {"ok": True}
-
-    
-@app.api_route("/", methods=["GET", "HEAD"])
-async def root():
-    return Response(content='{"status":"ok"}', media_type="application/json")
-    
 if __name__ == "__main__":
-    import uvicorn
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("bot:app", host="0.0.0.0", port=port, reload=False)
+    start_webhook(
+        dispatcher=dp,
+        webhook_path=WEBHOOK_PATH,
+        on_startup=on_startup,
+        on_shutdown=on_shutdown,
+        skip_updates=True,
+        host=WEBAPP_HOST,
+        port=WEBAPP_PORT,
+    )
