@@ -69,11 +69,11 @@ def get_user_row(user_id, channel):
             return i, row
     return None, None
 
-def update_user_data(user_id, username, channel, new_ref_id):
+async def update_user_data(user_id, username, channel, new_ref_id):
     row_num, existing = get_user_row(user_id, channel)
     if existing:
         invited_ids = existing[3].split(",") if existing[3] else []
-        if new_ref_id not in invited_ids:
+        if new_ref_id != str(user_id) and new_ref_id not in invited_ids:
             invited_ids.append(new_ref_id)
             count = len(invited_ids)
 
@@ -96,7 +96,7 @@ def update_user_data(user_id, username, channel, new_ref_id):
             # Якщо вже 3+ друзів і ще не повідомляли
             if count >= 3 and not already_notified:
                 try:
-                    bot.send_message(user_id, "🎉 Ви запросили 3 друзів — ви у розіграші!")
+                    await bot.send_message(user_id, "🎉 Ви запросили 3 друзів — ви у розіграші!")
                 except:
                     logging.warning(f"Не вдалося надіслати повідомлення {user_id}")
 
@@ -142,7 +142,7 @@ async def handle_start(message: types.Message):
             # Перевірка підписки
             if await check_subscription(message.from_user.id, channel_username):
                 # Зараховуємо цього користувача як друга для реферера
-                update_user_data(ref_id, "", channel_key, str(message.from_user.id))
+                await update_user_data(ref_id, "", channel_key, str(message.from_user.id))
 
                 # Показуємо тепер йому його особисте посилання
                 ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{message.from_user.id}"
