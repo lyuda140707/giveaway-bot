@@ -140,6 +140,15 @@ async def on_shutdown(dp):
     logging.info("❌ Видаляємо webhook...")
     await bot.delete_webhook()
 
+async def set_webhook_manually():
+    webhook_url = WEBHOOK_URL + WEBHOOK_PATH
+    success = await bot.set_webhook(webhook_url)
+    if success:
+        logging.info(f"✅ Webhook manually set: {webhook_url}")
+    else:
+        logging.error("❌ Failed to set webhook manually")
+
+
 if __name__ == "__main__":
     import uvicorn
     loop = asyncio.get_event_loop()
