@@ -118,9 +118,14 @@ async def handle_start(message: types.Message):
                 update_user_data(ref_id, "", channel_key, str(message.from_user.id))
 
                 # Показуємо тепер йому його особисте посилання
-                link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{message.from_user.id}"
+                ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{message.from_user.id}"
+                share_link = (
+                    f"https://t.me/share/url?url={ref_link}"
+                    f"&text=🎁 Привіт! Візьми участь у розіграші Telegram Premium!"
+                    f" Просто підпишись на {CHANNELS[channel_key]} і зайди в бот 😉"
+                )
                 kb = InlineKeyboardMarkup().add(
-                    InlineKeyboardButton(text="Запросити друзів", url=link)
+                    InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
                 )
 
                 await message.answer(
@@ -135,9 +140,16 @@ async def handle_start(message: types.Message):
 
     # Якщо користувач зайшов напряму (без посилання або сам)
     kb = InlineKeyboardMarkup(row_width=1)
+
     for key, ch in CHANNELS.items():
-        link = f"https://t.me/GiveawayKinoBot?start={key}_{message.from_user.id}"
-        kb.add(InlineKeyboardButton(text=f"Запросити друзів у {ch}", url=link))
+        ref_link = f"https://t.me/GiveawayKinoBot?start={key}_{message.from_user.id}"
+        share_link = (
+            f"https://t.me/share/url?url={ref_link}"
+            f"&text=🎁 Привіт! Візьми участь у розіграші Telegram Premium!"
+            f" Просто підпишись на {ch} і зайди в бот 😉"
+        )
+        kb.add(InlineKeyboardButton(text=f"Поділитися участю у {ch}", url=share_link))
+
 
     await message.answer(
         "🎉 Вітаю у розіграші Telegram Premium!\n\nПідпишись на канал і запроси 3 друзів, щоб взяти участь.\n\nОбери канал і отримай своє унікальне посилання:",
