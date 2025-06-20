@@ -167,21 +167,15 @@ async def handle_start(message: types.Message):
 
     # Якщо користувач зайшов напряму (без посилання або сам)
     kb = InlineKeyboardMarkup(row_width=1)
-
     for key, ch in CHANNELS.items():
-        ref_link = f"https://t.me/GiveawayKinoBot?start={key}_{message.from_user.id}"
-        share_link = (
-            f"https://t.me/share/url?url={ref_link}"
-            f"&text=🎁 Привіт! Візьми участь у розіграші Telegram Premium!"
-            f" Просто підпишись на {ch} і зайди в бот 😉"
-        )
-        kb.add(InlineKeyboardButton(text=f"Поділитися участю у {ch}", url=share_link))
-
-
+        kb.add(InlineKeyboardButton(text=f"Підписатися на {ch}", url=f"https://t.me/{ch[1:]}"))
     await message.answer(
-        "🎉 Вітаю у розіграші Telegram Premium!\n\nПідпишись на канал і запроси 3 друзів, щоб взяти участь.\n\nОбери канал і отримай своє унікальне посилання:",
+        "📢 Щоб взяти участь:\n1. Підпишись на канал\n2. Потім знову відкрий бот — і зʼявиться твоє унікальне посилання",
         reply_markup=kb
     )
+
+
+    
 
 
 
