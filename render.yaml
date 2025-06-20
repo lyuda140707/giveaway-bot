@@ -5,3 +5,10 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: python bot.py
     runtime: python-3.11
+
+  - type: worker
+    name: giveaway-worker
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python worker.py
+    runtime: python-3.11
