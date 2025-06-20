@@ -75,21 +75,48 @@ def update_user_data(user_id, username, channel, new_ref_id):
         invited_ids = existing[3].split(",") if existing[3] else []
         if new_ref_id not in invited_ids:
             invited_ids.append(new_ref_id)
-        count = len(invited_ids)
-        sheet.values().update(
-            spreadsheetId=SPREADSHEET_ID,
-            range=f"Giveaway!D{row_num}:E{row_num}",
-            valueInputOption="RAW",
-            body={"values": [[",".join(invited_ids), count]]}
-        ).execute()
+            count = len(invited_ids)
+
+            # Оновлюємо список + кількість
+            sheet.values().update(
+                spreadsheetId=SPREADSHEET_ID,
+                range=f"Giveaway!D{row_num}:E{row_num}",
+                valueInputOption="RAW",
+                body={"values": [[",".join(invited_ids), count]]}
+            ).execute()
+
+            # Перевіряємо колонку "Notified"
+            notify_check = sheet.values().get(
+                spreadsheetId=SPREADSHEET_ID,
+                range=f"Giveaway!F{row_num}"
+            ).execute().get("values", [])
+
+            already_notified = notify_check and notify_check[0][0].lower() == "так"
+
+            # Якщо вже 3+ друзів і ще не повідомляли
+            if count >= 3 and not already_notified:
+                try:
+                    bot.send_message(user_id, "🎉 Ви запросили 3 друзів — ви у розіграші!")
+                except:
+                    logging.warning(f"Не вдалося надіслати повідомлення {user_id}")
+
+                # Ставимо "так" у колонку F
+                sheet.values().update(
+                    spreadsheetId=SPREADSHEET_ID,
+                    range=f"Giveaway!F{row_num}",
+                    valueInputOption="RAW",
+                    body={"values": [["так"]]}
+                ).execute()
     else:
-        values = [[str(user_id), username or "", channel, new_ref_id, 1]]
+        # Додаємо нового користувача
+        values = [[str(user_id), username or "", channel, new_ref_id, 1, "ні"]]
         sheet.values().append(
             spreadsheetId=SPREADSHEET_ID,
-            range="Giveaway!A:E",
+            range="Giveaway!A:F",
             valueInputOption="RAW",
             body={"values": values}
         ).execute()
+
 
 async def check_subscription(user_id: int, channel: str):
     try:
