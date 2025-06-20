@@ -152,5 +152,6 @@ async def set_webhook_manually():
 if __name__ == "__main__":
     import uvicorn
     loop = asyncio.get_event_loop()
-    loop.create_task(on_startup(dp))  # Запускає set_webhook
+    loop.run_until_complete(set_webhook_manually())  # ⬅️ Додано цей виклик
+    loop.create_task(on_startup(dp))
     uvicorn.run("bot:app", host=WEBAPP_HOST, port=WEBAPP_PORT)
