@@ -7,7 +7,7 @@ import asyncio
 
 
 from fastapi import FastAPI, Request
-from aiogram.types import Update
+from aiogram import types
 from fastapi import Response
 
 
@@ -83,6 +83,7 @@ async def check_subscription(user_id: int, channel: str):
 
 @dp.message_handler(commands=['start'])
 async def handle_start(message: types.Message):
+    logging.info(f"▶️ /start отримано від {message.from_user.id} ({message.from_user.username})")
     args = message.get_args()
     referral_info = args if args else None
 
@@ -128,7 +129,7 @@ async def on_shutdown():
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     data = await request.json()
-    update = Update(**data)  # НЕ types.Update
+    update = types.Update(**data)
     await dp.process_update(update)
     return {"ok": True}
 
