@@ -120,7 +120,10 @@ async def process_webhook(request: Request):
     update = Update(**data)
     await dp.process_update(update)
     return {"ok": True}
-
+    
+@app.get("/")
+async def root():
+    return {"status": "ok"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))  # Render сам задасть PORT
