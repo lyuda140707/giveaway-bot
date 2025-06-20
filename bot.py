@@ -2,8 +2,6 @@ import os
 import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.dispatcher.webhook import SendMessage
-from aiogram.utils.executor import start_webhook
 import uvicorn
 import asyncio
 
@@ -110,13 +108,15 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def on_startup():
-    await bot.set_webhook(f"{WEBHOOK_URL}/webhook")
+    await asyncio.sleep(1)
+    asyncio.create_task(bot.set_webhook(f"{WEBHOOK_URL}/webhook"))
     logging.info("Webhook встановлено")
 
 @app.on_event("shutdown")
 async def on_shutdown():
     await bot.delete_webhook()
     logging.info("Webhook видалено")
+
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
