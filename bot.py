@@ -5,6 +5,10 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import uvicorn
 import asyncio
+from fastapi import FastAPI, Request
+from aiogram import types as aio_types
+from fastapi.responses import JSONResponse
+import json
 
 from aiogram import types
 from google.oauth2.service_account import Credentials
@@ -35,11 +39,27 @@ bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
+app = FastAPI()
+
 CHANNELS = {
     "kino": "@KinoTochkaUA",
     "films": "@KinoTochkaFilms"
 }
 
+@app.get("/")
+async def root():
+    return {"status": "Giveaway bot is running!"}
+
+@app.post("/webhook")
+async def telegram_webhook(request: Request):
+    try:
+        data = await request.json()
+        update = aio_types.Update(**data)
+        await dp.process_update(update)
+        return JSONResponse(content={"ok": True})
+    except Exception as e:
+        logging.error(f"Webhook error: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
 def get_user_row(user_id, channel):
     result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="Giveaway!A2:E").execute()
     values = result.get("values", [])
@@ -106,7 +126,6 @@ async def handle_start(message: types.Message):
         reply_markup=kb
     )
 
-from aiogram.utils.executor import start_webhook    
 
 WEBHOOK_PATH = "/webhook"
 WEBAPP_HOST = "0.0.0.0"
@@ -122,12 +141,7 @@ async def on_shutdown(dp):
     await bot.delete_webhook()
 
 if __name__ == "__main__":
-    start_webhook(
-        dispatcher=dp,
-        webhook_path=WEBHOOK_PATH,
-        on_startup=on_startup,
-        on_shutdown=on_shutdown,
-        skip_updates=True,
-        host=WEBAPP_HOST,
-        port=WEBAPP_PORT,
-    )
+    import uvicorn
+    loop = asyncio.get_event_loop()
+    loop.create_task(on_startup(dp))  # Запускає set_webhook
+    uvicorn.run("bot:app", host=WEBAPP_HOST, port=WEBAPP_PORT)
