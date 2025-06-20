@@ -27,6 +27,7 @@ sheet = sheet_service.spreadsheets()
 
 # === Telegram ===
 bot = Bot(token=BOT_TOKEN)
+Bot.set_current(bot)  # <-- додай це!
 dp = Dispatcher(bot)
 
 CHANNELS = {
