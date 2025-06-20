@@ -15,6 +15,8 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
 
+logging.basicConfig(level=logging.INFO)
+
 # === Load env ===
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -112,7 +114,9 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def on_startup():
+    logging.info("🚀 Стартуємо Webhook...")
     await bot.set_webhook(f"{WEBHOOK_URL}/webhook")
+    logging.info(f"Webhook встановлено: {WEBHOOK_URL}/webhook")
     
 
 @app.on_event("shutdown")
