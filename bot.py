@@ -108,9 +108,8 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def on_startup():
-    await asyncio.sleep(1)
-    asyncio.create_task(bot.set_webhook(f"{WEBHOOK_URL}/webhook"))
-    logging.info("Webhook встановлено")
+    await bot.set_webhook(f"{WEBHOOK_URL}/webhook")
+    
 
 @app.on_event("shutdown")
 async def on_shutdown():
@@ -121,9 +120,10 @@ async def on_shutdown():
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     data = await request.json()
-    update = types.Update(**data)
-    await dp.feed_update(bot, update)
+    update = Update(**data)  # НЕ types.Update
+    await dp.process_update(update)
     return {"ok": True}
+
     
 @app.api_route("/", methods=["GET", "HEAD"])
 async def root():
