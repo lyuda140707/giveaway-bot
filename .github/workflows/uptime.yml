@@ -1,0 +1,13 @@
+name: Keep Alive Render
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"  # кожні 5 хвилин
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Curl to wake up Render
+        run: curl -s https://giveaway-bot-z2z5.onrender.com > /dev/null
