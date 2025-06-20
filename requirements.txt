@@ -1,0 +1,7 @@
+aiogram==2.25.2
+python-dotenv
+google-api-python-client
+google-auth
+google-auth-httplib2
+fastapi
+uvicorn
