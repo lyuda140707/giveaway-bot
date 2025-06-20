@@ -1,40 +1,47 @@
 import os
 import logging
-import asyncio
-import json
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputTextMessageContent, InlineQueryResultArticle
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+import uvicorn
+import asyncio
+from fastapi import FastAPI, Request
+from aiogram import types as aio_types
+from fastapi.responses import JSONResponse
+import json
+
+from aiogram import types
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from dotenv import load_dotenv
+
+
+logging.basicConfig(level=logging.INFO)
 
 # === Load env ===
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Наприклад: https://your-render-url.onrender.com/webhook
 
 # === Google Sheets ===
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+import json
 CREDENTIALS = Credentials.from_service_account_info(
     json.loads(os.getenv("GOOGLE_SHEETS_CREDENTIALS_JSON")), scopes=SCOPES
 )
+
 sheet_service = build("sheets", "v4", credentials=CREDENTIALS)
 sheet = sheet_service.spreadsheets()
 
 # === Telegram ===
 bot = Bot(token=BOT_TOKEN)
-Bot.set_current(bot)
+Bot.set_current(bot)  # ✅ ДОДАЙ ЦЕЙ РЯДОК
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-# === FastAPI ===
 app = FastAPI()
 
-# === Канали ===
 CHANNELS = {
     "kino": "@KinoTochkaUA",
     "films": "@KinoTochkaFilms"
@@ -48,15 +55,14 @@ async def root():
 async def telegram_webhook(request: Request):
     try:
         data = await request.json()
-        update = types.Update(**data)
+        update = aio_types.Update(**data)
         await dp.process_update(update)
         return JSONResponse(content={"ok": True})
     except Exception as e:
         logging.error(f"Webhook error: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
-
 def get_user_row(user_id, channel):
-    result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="Giveaway!A2:F").execute()
+    result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="Giveaway!A2:E").execute()
     values = result.get("values", [])
     for i, row in enumerate(values, start=2):
         if len(row) >= 3 and row[0] == str(user_id) and row[2] == channel:
@@ -71,13 +77,15 @@ async def update_user_data(user_id, username, channel, new_ref_id):
             invited_ids.append(new_ref_id)
             count = len(invited_ids)
 
+            # Оновлюємо список + кількість
             sheet.values().update(
                 spreadsheetId=SPREADSHEET_ID,
                 range=f"Giveaway!D{row_num}:E{row_num}",
                 valueInputOption="RAW",
-                body={"values": [[" ,".join(invited_ids), count]]}
+                body={"values": [[",".join(invited_ids), count]]}
             ).execute()
 
+            # Перевіряємо колонку "Notified"
             notify_check = sheet.values().get(
                 spreadsheetId=SPREADSHEET_ID,
                 range=f"Giveaway!F{row_num}"
@@ -85,12 +93,14 @@ async def update_user_data(user_id, username, channel, new_ref_id):
 
             already_notified = notify_check and notify_check[0][0].lower() == "так"
 
+            # Якщо вже 3+ друзів і ще не повідомляли
             if count >= 3 and not already_notified:
                 try:
                     await bot.send_message(user_id, "🎉 Ви запросили 3 друзів — ви у розіграші!")
                 except:
                     logging.warning(f"Не вдалося надіслати повідомлення {user_id}")
 
+                # Ставимо "так" у колонку F
                 sheet.values().update(
                     spreadsheetId=SPREADSHEET_ID,
                     range=f"Giveaway!F{row_num}",
@@ -98,6 +108,7 @@ async def update_user_data(user_id, username, channel, new_ref_id):
                     body={"values": [["так"]]}
                 ).execute()
     else:
+        # Додаємо нового користувача
         values = [[str(user_id), username or "", channel, new_ref_id, 1, "ні"]]
         sheet.values().append(
             spreadsheetId=SPREADSHEET_ID,
@@ -105,6 +116,7 @@ async def update_user_data(user_id, username, channel, new_ref_id):
             valueInputOption="RAW",
             body={"values": values}
         ).execute()
+
 
 async def check_subscription(user_id: int, channel: str):
     try:
@@ -115,62 +127,63 @@ async def check_subscription(user_id: int, channel: str):
 
 @dp.message_handler(commands=['start'])
 async def handle_start(message: types.Message):
+    logging.info(f"▶️ /start отримано від {message.from_user.id} ({message.from_user.username})")
     args = message.get_args()
     referral_info = args if args else None
 
+    # Якщо користувач зайшов по чужому посиланню
     if referral_info and "_" in referral_info:
         prefix, ref_id = referral_info.split("_", 1)
-        if prefix in CHANNELS:
-            channel_username = CHANNELS[prefix]
+        channel_key = prefix if prefix in CHANNELS else None
 
+        if channel_key:
+            channel_username = CHANNELS[channel_key]
+
+            # Перевірка підписки
             if await check_subscription(message.from_user.id, channel_username):
-                await update_user_data(ref_id, "", prefix, str(message.from_user.id))
-                ref_link = f"https://t.me/{bot.username}?start={prefix}_{message.from_user.id}"
+                # Зараховуємо цього користувача як друга для реферера
+                await update_user_data(ref_id, "", channel_key, str(message.from_user.id))
+
+                # Показуємо тепер йому його особисте посилання
+                ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{message.from_user.id}"
+                share_link = (
+                    f"https://t.me/share/url?url={ref_link}"
+                    f"&text=🎁 Привіт! Візьми участь у розіграші Telegram Premium!"
+                    f" Просто підпишись на {CHANNELS[channel_key]} і зайди в бот 😉"
+                )
+                kb = InlineKeyboardMarkup().add(
+                    InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
+                )
+
                 await message.answer(
-                    "✅ Підписку підтверджено! Вас зараховано як друга для розіграшу.",
-                    reply_markup=InlineKeyboardMarkup().add(
-                        InlineKeyboardButton("🔗 Поділитись розіграшем", switch_inline_query=f"{prefix}_{message.from_user.id}")
-                    )
+                    "✅ Вас зараховано до участі!\n\nТепер запросіть 3 друзів через своє унікальне посилання:",
+                    reply_markup=kb
                 )
             else:
                 await message.answer(
-                    f"❗ Спочатку підпишись на канал {channel_username}\n"
-                    f"Після цього знову відкрий посилання, щоб участь зарахувалась!"
+                    f"❗ Щоб взяти участь, підпишіться на {channel_username} і знову натисніть на посилання."
                 )
-                return
+            return  # Виходимо, не показуємо стартове меню
 
-    else:
-        for key, ch in CHANNELS.items():
-            channel_url = f"https://t.me/{ch.lstrip('@')}"
-            kb = InlineKeyboardMarkup().add(
-                InlineKeyboardButton(text=f"📢 Перейти до каналу {ch}", url=channel_url)
-            )
-            await message.answer(
-                f"🎉 Вітаю у розіграші Telegram Premium!\n\n"
-                f"Щоб взяти участь, спочатку підпишись на канал {ch}\n"
-                f"Потім знову відкрий посилання, щоб зарахувалось!",
-                reply_markup=kb
-            )
+    # Якщо користувач зайшов напряму (без посилання або сам)
+    kb = InlineKeyboardMarkup(row_width=1)
 
-@dp.inline_handler()
-async def inline_referral_query(inline_query: types.InlineQuery):
-    query = inline_query.query.strip()
-    if "_" in query:
-        prefix, ref_id = query.split("_", 1)
-        if prefix in CHANNELS:
-            ch = CHANNELS[prefix]
-            link = f"https://t.me/{bot.username}?start={prefix}_{ref_id}"
-            input_content = InputTextMessageContent(
-                f"🎁 Хочеш отримати Telegram Premium?\n"
-                f"Підпишись на {ch} і запроси 3 друзів 👉 {link}"
-            )
-            result = InlineQueryResultArticle(
-                id="1",
-                title="Запросити друзів у розіграш",
-                description="Отримай Telegram Premium за активність",
-                input_message_content=input_content
-            )
-            await bot.answer_inline_query(inline_query.id, results=[result], cache_time=1)
+    for key, ch in CHANNELS.items():
+        ref_link = f"https://t.me/GiveawayKinoBot?start={key}_{message.from_user.id}"
+        share_link = (
+            f"https://t.me/share/url?url={ref_link}"
+            f"&text=🎁 Привіт! Візьми участь у розіграші Telegram Premium!"
+            f" Просто підпишись на {ch} і зайди в бот 😉"
+        )
+        kb.add(InlineKeyboardButton(text=f"Поділитися участю у {ch}", url=share_link))
+
+
+    await message.answer(
+        "🎉 Вітаю у розіграші Telegram Premium!\n\nПідпишись на канал і запроси 3 друзів, щоб взяти участь.\n\nОбери канал і отримай своє унікальне посилання:",
+        reply_markup=kb
+    )
+
+
 
 WEBHOOK_PATH = "/webhook"
 WEBAPP_HOST = "0.0.0.0"
@@ -193,8 +206,10 @@ async def set_webhook_manually():
     else:
         logging.error("❌ Failed to set webhook manually")
 
+
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(set_webhook_manually())
     import uvicorn
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(set_webhook_manually())  # ⬅️ Додано цей виклик
+   
     uvicorn.run("bot:app", host=WEBAPP_HOST, port=WEBAPP_PORT)
