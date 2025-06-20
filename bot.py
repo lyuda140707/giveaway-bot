@@ -4,6 +4,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.dispatcher.webhook import SendMessage
 from aiogram.utils.executor import start_webhook
+import uvicorn
 
 from fastapi import FastAPI, Request
 from aiogram.types import Update
@@ -117,3 +118,8 @@ async def process_webhook(request: Request):
     update = Update(**data)
     await dp.process_update(update)
     return {"ok": True}
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))  # Render сам задасть PORT
+    uvicorn.run("bot:app", host="0.0.0.0", port=port, reload=False)
