@@ -5,6 +5,8 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.dispatcher.webhook import SendMessage
 from aiogram.utils.executor import start_webhook
 import uvicorn
+import asyncio
+
 
 from fastapi import FastAPI, Request
 from aiogram.types import Update
@@ -119,7 +121,7 @@ async def on_shutdown():
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     data = await request.json()
-    update = Update.model_validate(data)
+    update = types.Update(**data)
     await dp.feed_update(bot, update)
     return {"ok": True}
     
