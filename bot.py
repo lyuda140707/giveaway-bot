@@ -23,7 +23,11 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Наприклад: https://your-rende
 
 # === Google Sheets ===
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-CREDENTIALS = Credentials.from_service_account_info(eval(os.getenv("GOOGLE_SHEETS_CREDENTIALS_JSON")), scopes=SCOPES)
+import json
+CREDENTIALS = Credentials.from_service_account_info(
+    json.loads(os.getenv("GOOGLE_SHEETS_CREDENTIALS_JSON")), scopes=SCOPES
+)
+
 sheet_service = build("sheets", "v4", credentials=CREDENTIALS)
 sheet = sheet_service.spreadsheets()
 
