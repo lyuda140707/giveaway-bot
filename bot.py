@@ -117,16 +117,16 @@ async def on_shutdown():
     logging.info("Webhook видалено")
 
 @app.post("/webhook")
-async def process_webhook(request: Request):
+async def telegram_webhook(request: Request):
     data = await request.json()
-    update = Update(**data)
-    await dp.process_update(update)
+    update = types.Update(**data)
+    await dp.feed_update(bot, update)
     return {"ok": True}
     
 @app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return Response(content='{"status":"ok"}', media_type="application/json")
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))  # Render сам задасть PORT
-    uvicorn.run("bot:app", host="0.0.0.0", port=port, reload=False)
+    
+import uvicorn
+port = int(os.environ.get("PORT", 8000))
+uvicorn.run("bot:app", host="0.0.0.0", port=port, reload=False)
