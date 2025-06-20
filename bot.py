@@ -1,6 +1,7 @@
 import os
 import logging
 from aiogram import Bot, Dispatcher, types
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import uvicorn
 import asyncio
@@ -31,9 +32,8 @@ sheet = sheet_service.spreadsheets()
 
 # === Telegram ===
 bot = Bot(token=BOT_TOKEN)
-Bot.set_current(bot)  # <-- додай це!
-dp = Dispatcher(bot)
-Dispatcher.set_current(dp)  # <--- І ЦЕ!
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
 
 CHANNELS = {
     "kino": "@KinoTochkaUA",
