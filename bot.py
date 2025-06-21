@@ -38,6 +38,7 @@ sheet = sheet_service.spreadsheets()
 
 # === Telegram ===
 bot = Bot(token=BOT_TOKEN)
+Bot.set_current(bot)  # <== обов’язково
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
