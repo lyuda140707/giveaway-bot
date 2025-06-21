@@ -44,3 +44,8 @@ async def check_all_users():
 
         except Exception as e:
             print(f"⚠️ Помилка перевірки {user_id}: {e}")
+
+async def run_periodic_check():
+    while True:
+        await check_all_users()
+        await asyncio.sleep(3600)  # кожні 60 хвилин
