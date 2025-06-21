@@ -220,7 +220,11 @@ async def process_check_subscription(callback_query: types.CallbackQuery):
     channel_username = "@" + data[1]
 
     try:
+        logging.info(f"🔍 Перевіряємо підписку {user_id} на {channel_username}")
+        
+        # 🔴 Цей рядок потрібен — без нього буде помилка:
         member = await bot.get_chat_member(chat_id=channel_username, user_id=user_id)
+        
         status = member.status
         print(f"🔍 Status for {user_id} in {channel_username}: {status}")
 
@@ -231,7 +235,7 @@ async def process_check_subscription(callback_query: types.CallbackQuery):
             await bot.answer_callback_query(
                 callback_query.id,
                 text="❗ Ви ще не підписались на канал!",
-                show_alert=True  # ⬅️ важливо!
+                show_alert=True
             )
     except Exception as e:
         await bot.answer_callback_query(
@@ -239,8 +243,7 @@ async def process_check_subscription(callback_query: types.CallbackQuery):
             text="🚫 Помилка перевірки підписки. Спробуй ще раз.",
             show_alert=True
         )
-        print(f"❌ Error checking subscription: {e}")
-
+        logging.error(f"❌ Error checking subscription: {e}")
 
 
 
