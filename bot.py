@@ -164,9 +164,9 @@ async def handle_start(message: types.Message):
 
         if channel_key:
             channel_username = CHANNELS[channel_key]
-
-            # ✅ Завжди показуємо кнопки
+            await update_user_data(ref_id, None, channel_key, "0")
             ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
+            
             share_text = (
                 f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
                 f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
