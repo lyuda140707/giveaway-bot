@@ -164,20 +164,33 @@ async def handle_start(message: types.Message):
 
         if channel_key:
             channel_username = CHANNELS[channel_key]
-            await update_user_data(ref_id, None, channel_key, "0")
-            ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
+            ref_row_num, _ = get_user_row(ref_id, channel_key)
+            # 👇 не додаємо ref_id, якщо він дорівнює user_id
+            if str(ref_id) != str(user_id):
+                # 👇 Додаємо реферала лише якщо він уже є в таблиці (тобто ref_row_num існує)
+                if str(ref_id) != str(user_id):
+                    if ref_row_num:
+                        logging.info(f"✔️ ref_id {ref_id} вже є у таблиці — все добре")
+                    else:
+                        logging.warning(f"⚠️ ref_id {ref_id} не знайдено у таблиці — не додаємо")
+                        ref_id = None  # ❗️Не додаємо вигаданого юзера
+            
+            
             
             share_text = (
-                f"🎁 Хочеш виграти Telegram Premium?\n\n"
-                f"🎬 Натисни на це посилання 👇\n"
+                f"🎁 Розіграш Telegram Premium!\n\n"
+                f"💬 Натисни 👇 це посилання:\n"
                 f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}\n\n"
-                f"Там бот усе підкаже:\n"
-                f"✅ Підписка на канал\n"
-                f"✅ Запрошення друзів\n"
-                f"🏆 І участь у розіграші!"
+                f"🟢 Бот усе пояснить:\n"
+                f"1️⃣ Підписка на канал\n"
+                f"2️⃣ Запрошення друзів\n"
+                f"3️⃣ Участь у розіграші!"
                
             )
-            share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
+            ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}"
+            share_link = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={urllib.parse.quote(share_text)}"
+            
+
 
             kb = InlineKeyboardMarkup().add(
                 InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
@@ -204,8 +217,11 @@ async def handle_start(message: types.Message):
     for key, ch in CHANNELS.items():
         ref_link = f"https://t.me/GiveawayKinoBot?start={key}_{user_id}"
         share_text = (
-            f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
-            f"@GiveawayKinoBot — підписуйся на {ch} і бери участь у розіграші Telegram Premium 🏆"
+            f"🎁 Участь у розіграші Telegram Premium!\n\n"
+            f"🔗 Тисни тут:\n"
+            f"{ref_link}\n\n"
+            f"📌 Підпишись на {ch} — і запроси друзів!"
+        
         )
         encoded_text = urllib.parse.quote(share_text)
         share_link = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={encoded_text}"
@@ -224,17 +240,19 @@ async def process_check_subscription(callback_query: types.CallbackQuery):
 
     # Захист від повторного проходження
     user_row_num, _ = get_user_row(user_id, channel_key)
-    if user_row_num:
-        await callback_query.message.answer("✅ Ви вже берете участь у розіграші!")
-        return
-
     if await check_subscription(user_id, channel_username):
-        await update_user_data(user_id, username, channel_key, str(ref_id))
+        if not user_row_num:
+            # Користувача ще нема — додаємо і реферал, якщо не self-ref
+            await update_user_data(user_id, username, channel_key, str(ref_id))
+        else:
+            # Користувач уже є — додаємо без ref_id (щоб не затирати)
+            await update_user_data(user_id, username, channel_key, None)
 
-        ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
+        ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}"
         share_text = (
-            f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
-            f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
+            f"🎁 Telegram Premium чекає на тебе!\n"
+            f"👉 Натисни: https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}\n"
+            f"🎬 Підпишись і запрошуй друзів!"
         )
         share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
 
@@ -242,8 +260,9 @@ async def process_check_subscription(callback_query: types.CallbackQuery):
             InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
         )
         await callback_query.message.answer(
-            "✅ Вас зараховано до участі!\n\n"
-            "Тепер запросіть **мінімум 3 друзів**, які теж підпишуться — і ви автоматично станете учасником розіграшу.",
+            "🎉 Ви успішно приєдналися!\n\n"
+            "📩 Тепер поділись своїм посиланням із друзями.\n"
+            "Коли **3 з них підпишуться** — ти автоматично береш участь у розіграші!",
             reply_markup=kb
         )
     else:
