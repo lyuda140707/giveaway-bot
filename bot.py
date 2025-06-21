@@ -128,6 +128,8 @@ async def check_subscription(user_id: int, channel: str):
 @dp.message_handler(commands=['start'])
 async def handle_start(message: types.Message):
     logging.info(f"▶️ /start отримано від {message.from_user.id} ({message.from_user.username})")
+    user_id = message.from_user.id
+    username = message.from_user.username
     args = message.get_args()
     referral_info = args if args else None
 
@@ -139,17 +141,14 @@ async def handle_start(message: types.Message):
         if channel_key:
             channel_username = CHANNELS[channel_key]
 
-            # Перевірка підписки
-            if await check_subscription(message.from_user.id, channel_username):
-                # Зараховуємо цього користувача як друга для реферера
-                await update_user_data(ref_id, "", channel_key, str(message.from_user.id))
+            if await check_subscription(user_id, channel_username):
+                await update_user_data(ref_id, "", channel_key, str(user_id))
 
-                # Показуємо тепер йому його особисте посилання
-                ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{message.from_user.id}"
+                ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}"
                 share_link = (
                     f"https://t.me/share/url?url={ref_link}"
-                    f"&text=🎁 Привіт! Візьми участь у розіграші Telegram Premium!"
-                    f" Просто підпишись на {CHANNELS[channel_key]} і зайди в бот 😉"
+                    f"&text=🎁 Привіт! Візьми участь у розіграші Telegram Premium!\n"
+                    f"Підпишись на {channel_username} і запроси друзів!"
                 )
                 kb = InlineKeyboardMarkup().add(
                     InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
@@ -161,22 +160,26 @@ async def handle_start(message: types.Message):
                 )
             else:
                 await message.answer(
-                    f"❗ Щоб взяти участь, підпишіться на {channel_username} і знову натисніть на посилання."
+                    f"❗ Щоб взяти участь, підпишись на {channel_username} і знову натисни на посилання."
                 )
-            return  # Виходимо, не показуємо стартове меню
+            return
 
-    # Якщо користувач зайшов напряму (без посилання або сам)
-    kb = InlineKeyboardMarkup(row_width=1)
-    for key, ch in CHANNELS.items():
-        kb.add(InlineKeyboardButton(text=f"Підписатися на {ch}", url=f"https://t.me/{ch[1:]}"))
-    await message.answer(
-        "📢 Щоб взяти участь:\n1. Підпишись на канал\n2. Потім знову відкрий бот — і зʼявиться твоє унікальне посилання",
-        reply_markup=kb
+    # Користувач зайшов напряму — показуємо стартове повідомлення + кнопки каналів
+    text = (
+        "🎉 Вітаю у розіграші Telegram Premium!\n\n"
+        "Ти маєш бути підписаний на канал і запросити 3 друзів, щоб взяти участь.\n\n"
+        "Обери канал і отримай своє унікальне посилання:"
     )
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    for key, ch in CHANNELS.items():
+        ref_link = f"https://t.me/GiveawayKinoBot?start={key}_{user_id}"
+        share_link = (
+            f"https://t.me/share/url?url={ref_link}"
+            f"&text=🎁 Хочу виграти Telegram Premium — підпишись на {ch} і бери участь!"
+        )
+        keyboard.add(InlineKeyboardButton(text=f"Поділитись через {ch}", url=share_link))
 
-
-    
-
+    await message.answer(text, reply_markup=keyboard)
 
 
 WEBHOOK_PATH = "/webhook"
