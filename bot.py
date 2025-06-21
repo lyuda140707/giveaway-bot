@@ -18,7 +18,6 @@ from dotenv import load_dotenv
 import urllib.parse
 
 
-
 logging.basicConfig(level=logging.INFO)
 
 # === Load env ===
@@ -50,10 +49,6 @@ CHANNELS = {
     "films": "@KinoTochkaFilms"
 }
 
-@app.on_event("startup")
-async def startup():
-    asyncio.create_task(run_periodic_check())
-    
 @app.get("/")
 async def root():
     return {"status": "Giveaway bot is running!"}
@@ -215,33 +210,39 @@ async def handle_start(message: types.Message):
 
 @dp.callback_query_handler(lambda c: c.data.startswith("check_"))
 async def process_check_subscription(callback_query: types.CallbackQuery):
+    await callback_query.answer()
+    _, channel_key, ref_id = callback_query.data.split("_", 2)
     user_id = callback_query.from_user.id
-    data = callback_query.data.split("_")
-    channel_key = data[1]
-    channel_username = CHANNELS.get(channel_key)
+    username = callback_query.from_user.username
+    channel_username = CHANNELS[channel_key]
 
-    try:
-        logging.info(f"🔍 Перевіряємо підписку {user_id} на {channel_username}")
-        member = await bot.get_chat_member(chat_id=channel_username, user_id=user_id)
-        status = member.status
-        print(f"🔍 Status for {user_id} in {channel_username}: {status}")
+    # Захист від повторного проходження
+    user_row_num, _ = get_user_row(user_id, channel_key)
+    if user_row_num:
+        await callback_query.message.answer("✅ Ви вже берете участь у розіграші!")
+        return
 
-        if status in ["member", "administrator", "creator"]:
-            await bot.answer_callback_query(callback_query.id)
-            await bot.send_message(user_id, "✅ Дякуємо! Тепер ти учасник розіграшу 🎉")
-        else:
-            await bot.answer_callback_query(
-                callback_query.id,
-                text="❗ Ви ще не підписались на канал!",
-                show_alert=True
-            )
-    except Exception as e:
-        await bot.answer_callback_query(
-            callback_query.id,
-            text="🚫 Помилка перевірки підписки. Спробуй ще раз.",
-            show_alert=True
+    if await check_subscription(user_id, channel_username):
+        await update_user_data(user_id, username, channel_key, str(ref_id))
+
+        ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
+        share_text = (
+            f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
+            f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
         )
-        logging.error(f"❌ Error checking subscription: {e}")
+        share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
+
+        kb = InlineKeyboardMarkup().add(
+            InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
+        )
+        await callback_query.message.answer(
+            "✅ Вас зараховано до участі!\n\n"
+            "Тепер запросіть **мінімум 3 друзів**, які теж підпишуться — і ви автоматично станете учасником розіграшу.",
+            reply_markup=kb
+        )
+    else:
+        logging.info(f"❌ {user_id} ще не підписався на {channel_username}")
+        await callback_query.answer("❗ Ви ще не підписались!", show_alert=True)
 
 
 
@@ -269,44 +270,6 @@ async def set_webhook_manually():
         logging.info(f"✅ Webhook manually set: {webhook_url}")
     else:
         logging.error("❌ Failed to set webhook manually")
-async def run_periodic_check():
-    while True:
-        logging.info("🔁 Починаємо перевірку підписок...")
-
-        try:
-            result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="Giveaway!A2:C").execute()
-            rows = result.get("values", [])
-
-            for i, row in enumerate(rows, start=2):  # i — це номер рядка в таблиці
-                if len(row) >= 3:
-                    user_id, _, channel_key = row
-                    channel_username = CHANNELS.get(channel_key)
-
-                    if channel_username:
-                        is_subscribed = await check_subscription(int(user_id), channel_username)
-
-                        # Оновлюємо колонку G (статус підписки)
-                        status_value = "так" if is_subscribed else "ні"
-                        sheet.values().update(
-                            spreadsheetId=SPREADSHEET_ID,
-                            range=f"Giveaway!G{i}",
-                            valueInputOption="RAW",
-                            body={"values": [[status_value]]}
-                        ).execute()
-
-                        if not is_subscribed:
-                            try:
-                                await bot.send_message(
-                                    int(user_id),
-                                    f"⚠️ Ви більше не підписані на {channel_username}. Участь у розіграші зупинена."
-                                )
-                            except Exception as e:
-                                logging.warning(f"❗ Не вдалося надіслати повідомлення {user_id}: {e}")
-
-        except Exception as e:
-            logging.error(f"❌ Помилка при перевірці підписок: {e}")
-
-        await asyncio.sleep(3600 * 6)  # кожні 6 годин
 
 
 if __name__ == "__main__":
