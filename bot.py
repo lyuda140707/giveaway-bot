@@ -149,7 +149,7 @@ async def handle_start(message: types.Message):
 
             if await check_subscription(user_id, channel_username):
                 # Тільки ТЕПЕР додаємо користувача в таблицю
-                await update_user_data(user_id, username, channel_key, str(ref_id))
+                await update_user_data(ref_id, None, channel_key, str(user_id))
                 ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
         
                 share_text = (
