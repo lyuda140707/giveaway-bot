@@ -169,19 +169,15 @@ async def handle_start(message: types.Message):
                 )
             return  # ✅ переміщено сюди, щоб зупинити обробку після реферала
 
-    # 1. Надсилаємо одне превʼю (наприклад, першого каналу)
-    first_channel = list(CHANNELS.values())[0]
-    await message.answer(first_channel, disable_web_page_preview=False)
-
-    # 2. Основний текст
-    await message.answer(
+    # Якщо користувач зайшов напряму
+    # Якщо користувач зайшов напряму
+    text = (
         "🎉 Вітаю у розіграші Telegram Premium!\n\n"
         "Підпишись на канал і запроси **мінімум 3 друзів**.\n"
         "⚠️ Щойно всі вони теж підпишуться — ти автоматично потрапиш у список учасників!\n\n"
-        "⬇️ Обери канал нижче, щоб отримати унікальне посилання:"
+        "Обери канал нижче, щоб отримати унікальне посилання:"
     )
 
-    # 3. Кнопки поділитись
     keyboard = InlineKeyboardMarkup(row_width=1)
     for key, ch in CHANNELS.items():
         ref_link = f"https://t.me/{ch.lstrip('@')}"
@@ -193,8 +189,7 @@ async def handle_start(message: types.Message):
         share_link = f"https://t.me/share/url?url={ref_link}&text={encoded_text}"
         keyboard.add(InlineKeyboardButton(text=f"Поділитись через {ch}", url=share_link))
 
-    await message.answer("⬇️ Поділись з друзями:", reply_markup=keyboard)
-
+    await message.answer(text, reply_markup=keyboard)
 
 
 
