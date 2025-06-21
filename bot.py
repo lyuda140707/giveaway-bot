@@ -170,12 +170,14 @@ async def handle_start(message: types.Message):
             return  # ✅ переміщено сюди, щоб зупинити обробку після реферала
 
     # Якщо користувач зайшов напряму
+    # Якщо користувач зайшов напряму
     text = (
         "🎉 Вітаю у розіграші Telegram Premium!\n\n"
         "Підпишись на канал і запроси **мінімум 3 друзів**.\n"
         "⚠️ Щойно всі вони теж підпишуться — ти автоматично потрапиш у список учасників!\n\n"
         "Обери канал нижче, щоб отримати унікальне посилання:"
     )
+
     keyboard = InlineKeyboardMarkup(row_width=1)
     for key, ch in CHANNELS.items():
         ref_link = f"https://t.me/{ch.lstrip('@')}"
@@ -184,9 +186,8 @@ async def handle_start(message: types.Message):
             f"@UAKinoTochka_bot — підписуйся на {ch} і бери участь у розіграші Telegram Premium 🏆"
         )
         share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
-        
-       keyboard.add(InlineKeyboardButton(text=f"Поділитись через {ch}", url=share_link))
-        
+        keyboard.add(InlineKeyboardButton(text=f"Поділитись через {ch}", url=share_link))
+
     await message.answer(text, reply_markup=keyboard)
 
 
