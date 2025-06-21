@@ -71,17 +71,30 @@ def get_user_row(user_id, channel):
     return None, None
 
 async def update_user_data(user_id, username, channel, new_ref_id):
-    row_num, existing = get_user_row(user_id, channel)
-    if existing:
-        invited_ids = existing[3].split(",") if existing[3] else []
-        if new_ref_id != str(user_id) and new_ref_id not in invited_ids:
-            invited_ids.append(new_ref_id)
+    # 1. Додаємо нового користувача (той, хто ПРИЙШОВ по реф-посиланню), якщо ще нема
+    user_row_num, user_row = get_user_row(user_id, channel)
+    if not user_row:
+        values = [[str(user_id), username or "", channel, "", 0, "ні"]]
+        logging.info(f"📥 Додаємо нового користувача {user_id} (реф: {new_ref_id}) у канал {channel}")
+        sheet.values().append(
+            spreadsheetId=SPREADSHEET_ID,
+            range="Giveaway!A:F",
+            valueInputOption="RAW",
+            body={"values": values}
+        ).execute()
+
+    # 2. Оновлюємо інформацію про того, ХТО ЗАПРОСИВ
+    ref_row_num, ref_row = get_user_row(new_ref_id, channel)
+    if ref_row:
+        invited_ids = ref_row[3].split(",") if len(ref_row) >= 4 and ref_row[3] else []
+        if str(user_id) not in invited_ids:
+            invited_ids.append(str(user_id))
             count = len(invited_ids)
 
-            # Оновлюємо список + кількість
+            # Оновлюємо invited_ids та count
             sheet.values().update(
                 spreadsheetId=SPREADSHEET_ID,
-                range=f"Giveaway!D{row_num}:E{row_num}",
+                range=f"Giveaway!D{ref_row_num}:E{ref_row_num}",
                 valueInputOption="RAW",
                 body={"values": [[",".join(invited_ids), count]]}
             ).execute()
@@ -89,7 +102,7 @@ async def update_user_data(user_id, username, channel, new_ref_id):
             # Перевіряємо колонку "Notified"
             notify_check = sheet.values().get(
                 spreadsheetId=SPREADSHEET_ID,
-                range=f"Giveaway!F{row_num}"
+                range=f"Giveaway!F{ref_row_num}"
             ).execute().get("values", [])
 
             already_notified = notify_check and notify_check[0][0].lower() == "так"
@@ -97,17 +110,18 @@ async def update_user_data(user_id, username, channel, new_ref_id):
             # Якщо вже 3+ друзів і ще не повідомляли
             if count >= 3 and not already_notified:
                 try:
-                    await bot.send_message(user_id, "🎉 Ви запросили 3 друзів — ви у розіграші!")
+                    await bot.send_message(new_ref_id, "🎉 Ви запросили 3 друзів — ви у розіграші!")
                 except:
-                    logging.warning(f"Не вдалося надіслати повідомлення {user_id}")
+                    logging.warning(f"Не вдалося надіслати повідомлення {new_ref_id}")
 
                 # Ставимо "так" у колонку F
                 sheet.values().update(
                     spreadsheetId=SPREADSHEET_ID,
-                    range=f"Giveaway!F{row_num}",
+                    range=f"Giveaway!F{ref_row_num}",
                     valueInputOption="RAW",
                     body={"values": [["так"]]}
                 ).execute()
+
     else:
         # Додаємо нового користувача
         
