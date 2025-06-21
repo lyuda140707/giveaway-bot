@@ -41,12 +41,7 @@ bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await set_webhook_manually()
-    yield
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 CHANNELS = {
     "kino": "@KinoTochkaUA",
