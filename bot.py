@@ -212,7 +212,7 @@ async def process_check_subscription(callback_query: types.CallbackQuery):
     username = callback_query.from_user.username
     channel_username = CHANNELS[channel_key]
 
-      # Перевірка: чи вже є такий user_id у таблиці
+    # Захист від повторного проходження
     user_row_num, _ = get_user_row(user_id, channel_key)
     if user_row_num:
         await callback_query.message.answer("✅ Ви вже берете участь у розіграші!")
@@ -221,24 +221,24 @@ async def process_check_subscription(callback_query: types.CallbackQuery):
     if await check_subscription(user_id, channel_username):
         await update_user_data(user_id, username, channel_key, str(ref_id))
 
-    ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
-    share_text = (
-        f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
-        f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
-    )
-    share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
+        ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
+        share_text = (
+            f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
+            f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
+        )
+        share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
 
-    kb = InlineKeyboardMarkup().add(
-        InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
-    )
-    await callback_query.message.answer(
-        "✅ Вас зараховано до участі!\n\n"
-        "Тепер запросіть **мінімум 3 друзів**, які теж підпишуться — і ви автоматично станете учасником розіграшу.",
-        reply_markup=kb
-    )
-else:
-    logging.info(f"❌ {user_id} ще не підписався на {channel_username}")
-    await callback_query.answer("❗ Ви ще не підписались!", show_alert=True)
+        kb = InlineKeyboardMarkup().add(
+            InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
+        )
+        await callback_query.message.answer(
+            "✅ Вас зараховано до участі!\n\n"
+            "Тепер запросіть **мінімум 3 друзів**, які теж підпишуться — і ви автоматично станете учасником розіграшу.",
+            reply_markup=kb
+        )
+    else:
+        logging.info(f"❌ {user_id} ще не підписався на {channel_username}")
+        await callback_query.answer("❗ Ви ще не підписались!", show_alert=True)
 
 
 
