@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request
 from aiogram import types as aio_types
 from fastapi.responses import JSONResponse
 import json
+from contextlib import asynccontextmanager
 
 from aiogram import types
 from google.oauth2.service_account import Credentials
@@ -40,7 +41,12 @@ bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await set_webhook_manually()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 CHANNELS = {
     "kino": "@KinoTochkaUA",
@@ -265,6 +271,4 @@ async def set_webhook_manually():
         logging.error("❌ Failed to set webhook manually")
 
 
-@app.on_event("startup")
-async def startup():
-    await set_webhook_manually()
+
