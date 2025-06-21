@@ -150,7 +150,7 @@ async def handle_start(message: types.Message):
                     f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
                     f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
                 )
-                encoded_text = urllib.parse.quote_plus(share_text)
+                encoded_text = share_text  # без кодування!
                 share_link = f"https://t.me/share/url?url={ref_link}&text={encoded_text}"
                     
                     
