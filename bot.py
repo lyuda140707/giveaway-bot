@@ -184,7 +184,7 @@ async def handle_start(message: types.Message):
         ref_link = f"https://t.me/GiveawayKinoBot?start={key}_{user_id}"
         share_text = (
             f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
-            f"@UAKinoTochka_bot — підписуйся на {ch} і бери участь у розіграші Telegram Premium 🏆"
+            f"@GiveawayKinoBot — підписуйся на {ch} і бери участь у розіграші Telegram Premium 🏆"
         )
         encoded_text = urllib.parse.quote(share_text)
         share_link = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={encoded_text}"
