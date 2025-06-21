@@ -168,14 +168,8 @@ async def handle_start(message: types.Message):
             ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
             
             share_text = (
-                f"🎁 Хочеш виграти Telegram Premium?\n\n"
-                f"🎬 Натисни на це посилання 👇\n"
-                f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}\n\n"
-                f"Там бот усе підкаже:\n"
-                f"✅ Підписка на канал\n"
-                f"✅ Запрошення друзів\n"
-                f"🏆 І участь у розіграші!"
-               
+                f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
+                f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
             )
             share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
 
