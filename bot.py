@@ -14,6 +14,7 @@ from aiogram import types
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
+import urllib.parse
 
 
 logging.basicConfig(level=logging.INFO)
@@ -145,11 +146,14 @@ async def handle_start(message: types.Message):
                 await update_user_data(ref_id, "", channel_key, str(user_id))
                 ref_link = f"https://t.me/{channel_username}?start={channel_key}_{user_id}"
         
-                share_link = (
-                    f"https://t.me/share/url?url={ref_link}"
-                    f"&text=🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
-                    f"Бот @UAKinoTochka_bot — підписуйся і бери участь у розіграші Telegram Premium 🏆"
+                share_text = (
+                    f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
+                    f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
                 )
+                encoded_text = urllib.parse.quote_plus(share_text)
+                share_link = f"https://t.me/share/url?url={ref_link}&text={encoded_text}"
+                    
+                    
                 kb = InlineKeyboardMarkup().add(
                     InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
                 )
