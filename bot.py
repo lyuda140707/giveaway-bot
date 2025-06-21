@@ -181,7 +181,7 @@ async def handle_start(message: types.Message):
     keyboard = InlineKeyboardMarkup(row_width=1)
     for key, ch in CHANNELS.items():
         # 🔥 Ось реферальне посилання з user_id
-        ref_link = f"https://t.me/UAKinoTochka_bot?start={key}_{user_id}"
+        ref_link = f"https://t.me/GiveawayKinoBot?start={key}_{user_id}"
         share_text = (
             f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
             f"@UAKinoTochka_bot — підписуйся на {ch} і бери участь у розіграші Telegram Premium 🏆"
