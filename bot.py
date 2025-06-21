@@ -147,40 +147,28 @@ async def handle_start(message: types.Message):
         if channel_key:
             channel_username = CHANNELS[channel_key]
 
-            if await check_subscription(user_id, channel_username):
-                # Тільки ТЕПЕР додаємо користувача в таблицю
-                await update_user_data(ref_id, None, channel_key, str(user_id))
-                ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
-        
-                share_text = (
-                    f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
-                    f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
-                )
-                encoded_text = share_text  # без кодування!
-                share_link = f"https://t.me/share/url?url={ref_link}&text={encoded_text}"
-                    
-                    
-                kb = InlineKeyboardMarkup().add(
-                    InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
-                ).add(
-                InlineKeyboardButton("✅ Я підписався", callback_data=f"check_{channel_key}_{ref_id}")
-                    
-                )
-                await message.answer(
-                    f"🔔 Перш ніж брати участь, підпишись на канал {channel_username} і повернись сюди.\n"
-                    f"Після підписки натисни кнопку нижче 👇",
-                    reply_markup=kb
-                )
-                   
-            else:
-                await message.answer(
-                    f"🔔 Перш ніж брати участь, підпишись на канал {channel_username} і повернись сюди. "
-                    f"Тільки після цього ти будеш врахований у розіграші!"
-                )
-            return  # ✅ переміщено сюди, щоб зупинити обробку після реферала
+            # ✅ Завжди показуємо кнопки
+            ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
+            share_text = (
+                f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
+                f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
+            )
+            share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
 
-    # Якщо користувач зайшов напряму
-    # Якщо користувач зайшов напряму
+            kb = InlineKeyboardMarkup().add(
+                InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
+            ).add(
+                InlineKeyboardButton("✅ Я підписався", callback_data=f"check_{channel_key}_{ref_id}")
+            )
+
+            await message.answer(
+                f"🔔 Перш ніж брати участь, підпишись на канал {channel_username} і повернись сюди.\n"
+                f"Після підписки натисни кнопку нижче 👇",
+                reply_markup=kb
+            )
+            return  # 🛑 Зупиняємо, бо вже показали кнопки
+
+    # 🔻 Якщо користувач зайшов без рефералки
     text = (
         "🎉 Вітаю у розіграші Telegram Premium!\n\n"
         "Підпишись на канал і запроси **мінімум 3 друзів**.\n"
@@ -190,7 +178,6 @@ async def handle_start(message: types.Message):
 
     keyboard = InlineKeyboardMarkup(row_width=1)
     for key, ch in CHANNELS.items():
-        # 🔥 Ось реферальне посилання з user_id
         ref_link = f"https://t.me/GiveawayKinoBot?start={key}_{user_id}"
         share_text = (
             f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
@@ -200,9 +187,8 @@ async def handle_start(message: types.Message):
         share_link = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={encoded_text}"
         keyboard.add(InlineKeyboardButton(text=f"Поділитись через {ch}", url=share_link))
 
-  
-
     await message.answer(text, reply_markup=keyboard)
+
 
 @dp.callback_query_handler(lambda c: c.data.startswith("check_"))
 async def process_check_subscription(callback_query: types.CallbackQuery):
