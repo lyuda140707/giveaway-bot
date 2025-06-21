@@ -187,7 +187,13 @@ async def handle_start(message: types.Message):
         )
         encoded_text = urllib.parse.quote(share_text)
         share_link = f"https://t.me/share/url?url={ref_link}&text={encoded_text}"
+        
+        await message.answer(ref_link)
+        await message.answer(share_text)
         keyboard.add(InlineKeyboardButton(text=f"Поділитись через {ch}", url=share_link))
+
+    
+    
 
     await message.answer(text, reply_markup=keyboard)
 
