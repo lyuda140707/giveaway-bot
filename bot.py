@@ -219,7 +219,7 @@ async def process_check_subscription(callback_query: types.CallbackQuery):
         return
 
     if await check_subscription(user_id, channel_username):
-    await update_user_data(user_id, username, channel_key, str(ref_id))
+        await update_user_data(user_id, username, channel_key, str(ref_id))
 
     ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
     share_text = (
