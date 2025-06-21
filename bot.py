@@ -56,6 +56,7 @@ async def root():
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     try:
+        Bot.set_current(bot)  # <== Додай це тут
         data = await request.json()
         update = aio_types.Update(**data)
         await dp.process_update(update)
@@ -63,6 +64,8 @@ async def telegram_webhook(request: Request):
     except Exception as e:
         logging.error(f"Webhook error: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+        
 def get_user_row(user_id, channel):
     result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="Giveaway!A2:E").execute()
     values = result.get("values", [])
@@ -250,9 +253,11 @@ WEBAPP_HOST = "0.0.0.0"
 WEBAPP_PORT = int(os.environ.get("PORT", 8000))
 
 async def on_startup(dp):
+    Bot.set_current(bot)  # <== сюди теж
     logging.info("🚀 Стартуємо Webhook...")
     await bot.set_webhook(WEBHOOK_URL + WEBHOOK_PATH)
     logging.info(f"Webhook встановлено: {WEBHOOK_URL + WEBHOOK_PATH}")
+
 
 async def on_shutdown(dp):
     logging.info("❌ Видаляємо webhook...")
