@@ -16,7 +16,6 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
 import urllib.parse
-from subscription_checker import check_all_users
 
 
 
@@ -268,6 +267,44 @@ async def set_webhook_manually():
         logging.info(f"✅ Webhook manually set: {webhook_url}")
     else:
         logging.error("❌ Failed to set webhook manually")
+async def run_periodic_check():
+    while True:
+        logging.info("🔁 Починаємо перевірку підписок...")
+
+        try:
+            result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range="Giveaway!A2:C").execute()
+            rows = result.get("values", [])
+
+            for i, row in enumerate(rows, start=2):  # i — це номер рядка в таблиці
+                if len(row) >= 3:
+                    user_id, _, channel_key = row
+                    channel_username = CHANNELS.get(channel_key)
+
+                    if channel_username:
+                        is_subscribed = await check_subscription(int(user_id), channel_username)
+
+                        # Оновлюємо колонку G (статус підписки)
+                        status_value = "так" if is_subscribed else "ні"
+                        sheet.values().update(
+                            spreadsheetId=SPREADSHEET_ID,
+                            range=f"Giveaway!G{i}",
+                            valueInputOption="RAW",
+                            body={"values": [[status_value]]}
+                        ).execute()
+
+                        if not is_subscribed:
+                            try:
+                                await bot.send_message(
+                                    int(user_id),
+                                    f"⚠️ Ви більше не підписані на {channel_username}. Участь у розіграші зупинена."
+                                )
+                            except Exception as e:
+                                logging.warning(f"❗ Не вдалося надіслати повідомлення {user_id}: {e}")
+
+        except Exception as e:
+            logging.error(f"❌ Помилка при перевірці підписок: {e}")
+
+        await asyncio.sleep(3600 * 6)  # кожні 6 годин
 
 
 if __name__ == "__main__":
