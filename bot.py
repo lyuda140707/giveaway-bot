@@ -161,11 +161,15 @@ async def handle_start(message: types.Message):
                 kb = InlineKeyboardMarkup().add(
                     InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
                 )
+                kb = InlineKeyboardMarkup().add(
+                    InlineKeyboardButton("✅ Я підписався", callback_data=f"check_{channel_key}_{ref_id}")
+                )
                 await message.answer(
-                    "✅ Вас зараховано до участі!\n\n"
-                    "Тепер запросіть **мінімум 3 друзів**, які теж підпишуться — і ви автоматично станете учасником розіграшу.",
+                    f"🔔 Перш ніж брати участь, підпишись на канал {channel_username} і повернись сюди.\n"
+                    f"Після підписки натисни кнопку нижче 👇",
                     reply_markup=kb
                 )
+                   
             else:
                 await message.answer(
                     f"🔔 Перш ніж брати участь, підпишись на канал {channel_username} і повернись сюди. "
@@ -197,6 +201,35 @@ async def handle_start(message: types.Message):
   
 
     await message.answer(text, reply_markup=keyboard)
+
+@dp.callback_query_handler(lambda c: c.data.startswith("check_"))
+async def process_check_subscription(callback_query: types.CallbackQuery):
+    _, channel_key, ref_id = callback_query.data.split("_", 2)
+    user_id = callback_query.from_user.id
+    username = callback_query.from_user.username
+    channel_username = CHANNELS[channel_key]
+
+    if await check_subscription(user_id, channel_username):
+        await update_user_data(ref_id, "", channel_key, str(user_id))
+
+        ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
+        share_text = (
+            f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
+            f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
+        )
+        share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
+
+        kb = InlineKeyboardMarkup().add(
+            InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
+        )
+        await callback_query.message.answer(
+            "✅ Вас зараховано до участі!\n\n"
+            "Тепер запросіть **мінімум 3 друзів**, які теж підпишуться — і ви автоматично станете учасником розіграшу.",
+            reply_markup=kb
+        )
+    else:
+        await callback_query.answer("❗ Ви ще не підписались!", show_alert=True)
+
 
 
 
