@@ -70,12 +70,12 @@ def get_user_row(user_id, channel):
             return i, row
     return None, None
 
-async def update_user_data(user_id, username, channel, new_ref_id):
-    # 1. Додаємо нового користувача (той, хто ПРИЙШОВ по реф-посиланню), якщо ще нема
+async def update_user_data(user_id, username, channel, ref_id):
+    # 1. Додаємо нового користувача, якщо його ще нема
     user_row_num, user_row = get_user_row(user_id, channel)
     if not user_row:
+        logging.info(f"📥 Додаємо нового користувача {user_id} у канал {channel}")
         values = [[str(user_id), username or "", channel, "", 0, "ні"]]
-        logging.info(f"📥 Додаємо нового користувача {user_id} (реф: {new_ref_id}) у канал {channel}")
         sheet.values().append(
             spreadsheetId=SPREADSHEET_ID,
             range="Giveaway!A:F",
@@ -83,15 +83,16 @@ async def update_user_data(user_id, username, channel, new_ref_id):
             body={"values": values}
         ).execute()
 
-    # 2. Оновлюємо інформацію про того, ХТО ЗАПРОСИВ
-    ref_row_num, ref_row = get_user_row(new_ref_id, channel)
+    # 2. Оновлюємо інформацію про того, хто запросив
+    ref_row_num, ref_row = get_user_row(ref_id, channel)
     if ref_row:
         invited_ids = ref_row[3].split(",") if len(ref_row) >= 4 and ref_row[3] else []
-        if str(user_id) not in invited_ids:
+
+        if str(user_id) != str(ref_id) and str(user_id) not in invited_ids:
             invited_ids.append(str(user_id))
             count = len(invited_ids)
 
-            # Оновлюємо invited_ids та count
+            # Оновлюємо invited_ids і count
             sheet.values().update(
                 spreadsheetId=SPREADSHEET_ID,
                 range=f"Giveaway!D{ref_row_num}:E{ref_row_num}",
@@ -99,22 +100,32 @@ async def update_user_data(user_id, username, channel, new_ref_id):
                 body={"values": [[",".join(invited_ids), count]]}
             ).execute()
 
-            # Перевіряємо колонку "Notified"
+            # Перевірка чи вже повідомляли
             notify_check = sheet.values().get(
                 spreadsheetId=SPREADSHEET_ID,
                 range=f"Giveaway!F{ref_row_num}"
             ).execute().get("values", [])
-
             already_notified = notify_check and notify_check[0][0].lower() == "так"
 
-            # Якщо вже 3+ друзів і ще не повідомляли
+            # 📨 Повідомлення про кожного друга
+            try:
+                await bot.send_message(
+                    int(ref_id),
+                    f"🎯 Хтось підписався по вашому посиланню!\n🔢 Запрошено: {count} з 3"
+                )
+            except Exception as e:
+                logging.warning(f"⚠️ Не вдалося надіслати повідомлення {ref_id}: {e}")
+
+            # 🎉 Якщо 3 або більше — надсилаємо фінальне
             if count >= 3 and not already_notified:
                 try:
-                    await bot.send_message(new_ref_id, "🎉 Ви запросили 3 друзів — ви у розіграші!")
-                except:
-                    logging.warning(f"Не вдалося надіслати повідомлення {new_ref_id}")
+                    await bot.send_message(
+                        int(ref_id),
+                        "🎉 Ви запросили 3 друзів — ви у розіграші!"
+                    )
+                except Exception as e:
+                    logging.warning(f"⚠️ Не вдалося надіслати повідомлення {ref_id}: {e}")
 
-                # Ставимо "так" у колонку F
                 sheet.values().update(
                     spreadsheetId=SPREADSHEET_ID,
                     range=f"Giveaway!F{ref_row_num}",
@@ -122,17 +133,6 @@ async def update_user_data(user_id, username, channel, new_ref_id):
                     body={"values": [["так"]]}
                 ).execute()
 
-    else:
-        # Додаємо нового користувача
-        
-        values = [[str(user_id), username or "", channel, new_ref_id, 1, "ні"]]
-        logging.info(f"📥 Додаємо нового користувача {user_id} (реф: {new_ref_id}) у канал {channel}")
-        sheet.values().append(
-            spreadsheetId=SPREADSHEET_ID,
-            range="Giveaway!A:F",
-            valueInputOption="RAW",
-            body={"values": values}
-        ).execute()
 
 
 async def check_subscription(user_id: int, channel: str):
@@ -212,26 +212,34 @@ async def process_check_subscription(callback_query: types.CallbackQuery):
     username = callback_query.from_user.username
     channel_username = CHANNELS[channel_key]
 
+      # Перевірка: чи вже є такий user_id у таблиці
+    user_row_num, _ = get_user_row(user_id, channel_key)
+    if user_row_num:
+        await callback_query.message.answer("✅ Ви вже берете участь у розіграші!")
+        return
+
     if await check_subscription(user_id, channel_username):
-        await update_user_data(user_id, username, channel_key, str(ref_id))
+    await update_user_data(user_id, username, channel_key, str(ref_id))
 
-        ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
-        share_text = (
-            f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
-            f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
-        )
-        share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
+    ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
+    share_text = (
+        f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
+        f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
+    )
+    share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
 
-        kb = InlineKeyboardMarkup().add(
-            InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
-        )
-        await callback_query.message.answer(
-            "✅ Вас зараховано до участі!\n\n"
-            "Тепер запросіть **мінімум 3 друзів**, які теж підпишуться — і ви автоматично станете учасником розіграшу.",
-            reply_markup=kb
-        )
-    else:
-        await callback_query.answer("❗ Ви ще не підписались!", show_alert=True)
+    kb = InlineKeyboardMarkup().add(
+        InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
+    )
+    await callback_query.message.answer(
+        "✅ Вас зараховано до участі!\n\n"
+        "Тепер запросіть **мінімум 3 друзів**, які теж підпишуться — і ви автоматично станете учасником розіграшу.",
+        reply_markup=kb
+    )
+else:
+    logging.info(f"❌ {user_id} ще не підписався на {channel_username}")
+    await callback_query.answer("❗ Ви ще не підписались!", show_alert=True)
+
 
 
 
