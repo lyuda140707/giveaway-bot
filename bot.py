@@ -110,7 +110,9 @@ async def update_user_data(user_id, username, channel, new_ref_id):
                 ).execute()
     else:
         # Додаємо нового користувача
+        
         values = [[str(user_id), username or "", channel, new_ref_id, 1, "ні"]]
+        logging.info(f"📥 Додаємо нового користувача {user_id} (реф: {new_ref_id}) у канал {channel}")
         sheet.values().append(
             spreadsheetId=SPREADSHEET_ID,
             range="Giveaway!A:F",
@@ -147,7 +149,7 @@ async def handle_start(message: types.Message):
 
             if await check_subscription(user_id, channel_username):
                 # Тільки ТЕПЕР додаємо користувача в таблицю
-                await update_user_data(ref_id, "", channel_key, str(user_id))
+                await update_user_data(user_id, username, channel_key, str(ref_id))
                 ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
         
                 share_text = (
@@ -160,9 +162,9 @@ async def handle_start(message: types.Message):
                     
                 kb = InlineKeyboardMarkup().add(
                     InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
-                )
-                kb = InlineKeyboardMarkup().add(
-                    InlineKeyboardButton("✅ Я підписався", callback_data=f"check_{channel_key}_{ref_id}")
+                ).add(
+                InlineKeyboardButton("✅ Я підписався", callback_data=f"check_{channel_key}_{ref_id}")
+                    
                 )
                 await message.answer(
                     f"🔔 Перш ніж брати участь, підпишись на канал {channel_username} і повернись сюди.\n"
@@ -204,13 +206,14 @@ async def handle_start(message: types.Message):
 
 @dp.callback_query_handler(lambda c: c.data.startswith("check_"))
 async def process_check_subscription(callback_query: types.CallbackQuery):
+    await callback_query.answer()
     _, channel_key, ref_id = callback_query.data.split("_", 2)
     user_id = callback_query.from_user.id
     username = callback_query.from_user.username
     channel_username = CHANNELS[channel_key]
 
     if await check_subscription(user_id, channel_username):
-        await update_user_data(ref_id, "", channel_key, str(user_id))
+        await update_user_data(user_id, username, channel_key, str(ref_id))
 
         ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
         share_text = (
