@@ -217,14 +217,12 @@ async def handle_start(message: types.Message):
 async def process_check_subscription(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     data = callback_query.data.split("_")
-    channel_username = "@" + data[1]
+    channel_key = data[1]
+    channel_username = CHANNELS.get(channel_key)
 
     try:
         logging.info(f"🔍 Перевіряємо підписку {user_id} на {channel_username}")
-        
-        # 🔴 Цей рядок потрібен — без нього буде помилка:
         member = await bot.get_chat_member(chat_id=channel_username, user_id=user_id)
-        
         status = member.status
         print(f"🔍 Status for {user_id} in {channel_username}: {status}")
 
@@ -244,6 +242,7 @@ async def process_check_subscription(callback_query: types.CallbackQuery):
             show_alert=True
         )
         logging.error(f"❌ Error checking subscription: {e}")
+
 
 
 
