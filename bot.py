@@ -271,4 +271,6 @@ async def set_webhook_manually():
         logging.error("❌ Failed to set webhook manually")
 
 
-
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("bot:app", host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
