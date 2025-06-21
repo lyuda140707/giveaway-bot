@@ -122,10 +122,14 @@ async def update_user_data(user_id, username, channel, new_ref_id):
 async def check_subscription(user_id: int, channel: str):
     try:
         chat_member = await bot.get_chat_member(channel, user_id)
-        return chat_member.status in ["member", "creator", "administrator"]
-    except:
+        logging.info(f"👁 Перевірка підписки: {user_id} у {channel} — статус: {chat_member.status}")
+        return chat_member.status in ("member", "administrator", "creator")
+    except Exception as e:
+        logging.error(f"❌ Помилка при перевірці підписки {user_id} у {channel}: {e}")
         return False
 
+
+    
 @dp.message_handler(commands=['start'])
 async def handle_start(message: types.Message):
     logging.info(f"▶️ /start отримано від {message.from_user.id} ({message.from_user.username})")
