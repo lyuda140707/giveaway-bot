@@ -167,6 +167,7 @@ async def handle_start(message: types.Message):
             await update_user_data(ref_id, None, channel_key, "0")
             ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
             
+            ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}"
             share_text = (
                 f"🎁 Хочеш виграти Telegram Premium?\n\n"
                 f"🎬 Натисни на це посилання 👇\n"
@@ -177,7 +178,8 @@ async def handle_start(message: types.Message):
                 f"🏆 І участь у розіграші!"
                
             )
-            share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
+            share_link = f"https://t.me/share/url?url={ref_link}&text={urllib.parse.quote(share_text)}"
+
 
             kb = InlineKeyboardMarkup().add(
                 InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
@@ -204,8 +206,14 @@ async def handle_start(message: types.Message):
     for key, ch in CHANNELS.items():
         ref_link = f"https://t.me/GiveawayKinoBot?start={key}_{user_id}"
         share_text = (
-            f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
-            f"@GiveawayKinoBot — підписуйся на {ch} і бери участь у розіграші Telegram Premium 🏆"
+            f"🎁 Хочеш виграти Telegram Premium?\n\n"
+            f"🎬 Натисни на це посилання 👇\n"
+            f"{ref_link}\n\n"
+            f"Там бот усе підкаже:\n"
+            f"✅ Підписка на канал\n"
+            f"✅ Запрошення друзів\n"
+            f"🏆 І участь у розіграші!"
+           
         )
         encoded_text = urllib.parse.quote(share_text)
         share_link = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={encoded_text}"
@@ -232,11 +240,18 @@ async def process_check_subscription(callback_query: types.CallbackQuery):
         await update_user_data(user_id, username, channel_key, str(ref_id))
 
         ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
+
+        ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}"
         share_text = (
-            f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
-            f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
+            f"🎁 Хочеш виграти Telegram Premium?\n\n"
+            f"🎬 Натисни на це посилання 👇\n"
+            f"{ref_link}\n\n"
+            f"Там бот усе підкаже:\n"
+            f"✅ Підписка на канал\n"
+            f"✅ Запрошення друзів\n"
+            f"🏆 І участь у розіграші!"    
         )
-        share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
+        share_link = f"https://t.me/share/url?url={ref_link}&text={urllib.parse.quote(share_text)}"
 
         kb = InlineKeyboardMarkup().add(
             InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
