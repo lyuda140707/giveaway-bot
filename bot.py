@@ -143,7 +143,8 @@ async def handle_start(message: types.Message):
             if await check_subscription(user_id, channel_username):
                 # Тільки ТЕПЕР додаємо користувача в таблицю
                 await update_user_data(ref_id, "", channel_key, str(user_id))
-                ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}"
+                ref_link = f"https://t.me/{channel_username}?start={channel_key}_{user_id}"
+        
                 share_link = (
                     f"https://t.me/share/url?url={ref_link}"
                     f"&text=🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
@@ -173,14 +174,14 @@ async def handle_start(message: types.Message):
     )
     keyboard = InlineKeyboardMarkup(row_width=1)
     for key, ch in CHANNELS.items():
-        ref_link = f"https://t.me/GiveawayKinoBot?start={key}_{user_id}"
+        ref_link = f"https://t.me/{ch.lstrip('@')}"  # ✅ тепер посилання прямо на канал
         share_link = (
             f"https://t.me/share/url?url={ref_link}"
             f"&text=🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
-            f"Бот @UAKinoTochka_bot — підписуйся і бери участь у розіграші Telegram Premium 🏆"
+            f"@UAKinoTochka_bot — підписуйся на {ch} і бери участь у розіграші Telegram Premium 🏆"
         )
         keyboard.add(InlineKeyboardButton(text=f"Поділитись через {ch}", url=share_link))
-
+        
     await message.answer(text, reply_markup=keyboard)
 
 
