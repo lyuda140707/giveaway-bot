@@ -141,7 +141,7 @@ async def handle_start(message: types.Message):
             channel_username = CHANNELS[channel_key]
 
             if await check_subscription(user_id, channel_username):
-                 # Тільки ТЕПЕР додаємо користувача в таблицю
+                # Тільки ТЕПЕР додаємо користувача в таблицю
                 await update_user_data(ref_id, "", channel_key, str(user_id))
                 ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}"
                 share_link = (
@@ -157,14 +157,12 @@ async def handle_start(message: types.Message):
                     "Тепер запросіть **мінімум 3 друзів**, які теж підпишуться — і ви автоматично станете учасником розіграшу.",
                     reply_markup=kb
                 )
-               
-                else:
-                    await message.answer(
-                        f"🔔 Перш ніж брати участь, підпишись на канал {channel_username} і повернись сюди. Тільки після цього ти будеш врахований у розіграші!"
-                    )
-
-    
-               
+            else:
+                await message.answer(
+                    f"🔔 Перш ніж брати участь, підпишись на канал {channel_username} і повернись сюди. "
+                    f"Тільки після цього ти будеш врахований у розіграші!"
+                )
+            return  # ✅ переміщено сюди, щоб зупинити обробку після реферала
 
     # Якщо користувач зайшов напряму
     text = (
@@ -184,6 +182,7 @@ async def handle_start(message: types.Message):
         keyboard.add(InlineKeyboardButton(text=f"Поділитись через {ch}", url=share_link))
 
     await message.answer(text, reply_markup=keyboard)
+
 
 
 WEBHOOK_PATH = "/webhook"
