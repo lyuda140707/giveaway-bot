@@ -164,7 +164,7 @@ async def handle_start(message: types.Message):
 
         if channel_key:
             channel_username = CHANNELS[channel_key]
-            await update_user_data(ref_id, None, channel_key, "0")
+            await update_user_data(user_id, username, channel_key, ref_id)
             ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
             
             ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}"
