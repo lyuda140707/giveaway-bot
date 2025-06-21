@@ -16,8 +16,6 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
 import urllib.parse
-from subscription_checker import check_all_users
-
 
 
 logging.basicConfig(level=logging.INFO)
@@ -51,10 +49,6 @@ CHANNELS = {
     "films": "@KinoTochkaFilms"
 }
 
-@app.on_event("startup")
-async def startup():
-    asyncio.create_task(run_periodic_check())
-    
 @app.get("/")
 async def root():
     return {"status": "Giveaway bot is running!"}
