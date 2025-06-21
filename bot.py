@@ -265,9 +265,6 @@ async def set_webhook_manually():
         logging.error("❌ Failed to set webhook manually")
 
 
-if __name__ == "__main__":
-    import uvicorn
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(set_webhook_manually())  # ⬅️ Додано цей виклик
-   
-    uvicorn.run("bot:app", host=WEBAPP_HOST, port=WEBAPP_PORT)
+@app.on_event("startup")
+async def startup():
+    await set_webhook_manually()
