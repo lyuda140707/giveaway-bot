@@ -210,39 +210,31 @@ async def handle_start(message: types.Message):
 
 @dp.callback_query_handler(lambda c: c.data.startswith("check_"))
 async def process_check_subscription(callback_query: types.CallbackQuery):
-    await callback_query.answer()
-    _, channel_key, ref_id = callback_query.data.split("_", 2)
     user_id = callback_query.from_user.id
-    username = callback_query.from_user.username
-    channel_username = CHANNELS[channel_key]
+    data = callback_query.data.split("_")
+    channel_username = "@" + data[1]
 
-    # Захист від повторного проходження
-    user_row_num, _ = get_user_row(user_id, channel_key)
-    if user_row_num:
-        await callback_query.message.answer("✅ Ви вже берете участь у розіграші!")
-        return
+    try:
+        member = await bot.get_chat_member(chat_id=channel_username, user_id=user_id)
+        status = member.status
+        print(f"🔍 Status for {user_id} in {channel_username}: {status}")
 
-    if await check_subscription(user_id, channel_username):
-        await update_user_data(user_id, username, channel_key, str(ref_id))
-
-        ref_link = f"https://t.me/{channel_username.lstrip('@')}?start={channel_key}_{user_id}"
-        share_text = (
-            f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
-            f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
+        if status in ["member", "administrator", "creator"]:
+            await bot.answer_callback_query(callback_query.id)
+            await bot.send_message(user_id, "✅ Дякуємо! Тепер ти учасник розіграшу 🎉")
+        else:
+            await bot.answer_callback_query(
+                callback_query.id,
+                text="❗ Ви ще не підписались на канал!",
+                show_alert=True  # ⬅️ важливо!
+            )
+    except Exception as e:
+        await bot.answer_callback_query(
+            callback_query.id,
+            text="🚫 Помилка перевірки підписки. Спробуй ще раз.",
+            show_alert=True
         )
-        share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
-
-        kb = InlineKeyboardMarkup().add(
-            InlineKeyboardButton(text="Поділитися посиланням", url=share_link)
-        )
-        await callback_query.message.answer(
-            "✅ Вас зараховано до участі!\n\n"
-            "Тепер запросіть **мінімум 3 друзів**, які теж підпишуться — і ви автоматично станете учасником розіграшу.",
-            reply_markup=kb
-        )
-    else:
-        logging.info(f"❌ {user_id} ще не підписався на {channel_username}")
-        await callback_query.answer("❗ Ви ще не підписались!", show_alert=True)
+        print(f"❌ Error checking subscription: {e}")
 
 
 
