@@ -79,13 +79,18 @@ async def update_user_data(user_id, username, channel, ref_id):
     user_row_num, user_row = get_user_row(user_id, channel)
     if not user_row:
         logging.info(f"📥 Додаємо нового користувача {user_id} у канал {channel}")
-        values = [[str(user_id), username or "", channel, "", 0, "ні"]]
+        ref_id_str = str(ref_id) if ref_id else ""
+        values = [[str(user_id), username or "", channel, ref_id_str, 0, "ні"]]
         sheet.values().append(
             spreadsheetId=SPREADSHEET_ID,
             range="Giveaway!A:F",
             valueInputOption="RAW",
             body={"values": values}
         ).execute()
+    
+
+   
+        
 
     # 2. Оновлюємо інформацію про того, хто запросив
     ref_row_num, ref_row = get_user_row(ref_id, channel)
