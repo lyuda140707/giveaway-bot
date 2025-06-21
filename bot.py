@@ -147,11 +147,11 @@ async def handle_start(message: types.Message):
                 ref_link = f"https://t.me/{channel_username}?start={channel_key}_{user_id}"
         
                 share_text = (
-                    f"🎬 Крутий бот із фільмами, серіалами і навіть розіграшем Преміуму!\n"
-                    f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🎁"
+                    f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
+                    f"@UAKinoTochka_bot — підписуйся на {channel_username} і бери участь у розіграші Telegram Premium 🏆"
                 )
-                share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
-                    
+                encoded_text = urllib.parse.quote_plus(share_text)
+                share_link = f"https://t.me/share/url?url={ref_link}&text={encoded_text}"
                     
                     
                 kb = InlineKeyboardMarkup().add(
@@ -179,13 +179,12 @@ async def handle_start(message: types.Message):
     keyboard = InlineKeyboardMarkup(row_width=1)
     for key, ch in CHANNELS.items():
         ref_link = f"https://t.me/{ch.lstrip('@')}"  # ✅ тепер посилання прямо на канал
-        text = (
-            f"🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
-            f"{ch} — підписуйся і бери участь у розіграші Telegram Premium 🏆\n\n"
-            f"👉 @UAKinoTochka_bot"
+        share_link = (
+            f"https://t.me/share/url?url={ref_link}"
+            f"&text=🎞 Тут кіно, серіали і навіть Преміум можна виграти!\n"
+            f"@UAKinoTochka_bot — підписуйся на {ch} і бери участь у розіграші Telegram Premium 🏆"
         )
-        keyboard.add(InlineKeyboardButton(text=f"Перейти в канал {ch}", url=f"https://t.me/{ch.lstrip('@')}"))
-        await message.answer(text, reply_markup=keyboard)
+        keyboard.add(InlineKeyboardButton(text=f"Поділитись через {ch}", url=share_link))
         
     await message.answer(text, reply_markup=keyboard)
 
