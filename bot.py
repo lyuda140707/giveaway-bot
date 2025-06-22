@@ -59,7 +59,7 @@ async def telegram_webhook(request: Request):
     try:
         Bot.set_current(bot)  # <== Додай це тут
         data = await request.json()
-        update = aio_types.Update(**data)
+        update = types.Update(**data)
         await dp.process_update(update)
         return JSONResponse(content={"ok": True})
     except Exception as e:
@@ -211,7 +211,6 @@ async def handle_start(message: types.Message):
             )
             return  # 🛑 Зупиняємо, бо вже показали кнопки
 
-else:
     # 🔻 Якщо користувач зайшов без рефералки — випадково обираємо канал
     channel_key = random.choice(list(CHANNELS.keys()))
     channel_username = CHANNELS[channel_key]
