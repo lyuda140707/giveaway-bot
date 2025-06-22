@@ -42,7 +42,17 @@ Bot.set_current(bot)  # <== обов’язково
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logging.info("🚀 Lifespan запускається")
+    Bot.set_current(bot)  # Обов'язково
+    await bot.set_webhook(WEBHOOK_URL + WEBHOOK_PATH)
+    logging.info(f"✅ Webhook встановлено: {WEBHOOK_URL + WEBHOOK_PATH}")
+    yield
+    logging.info("🧹 Завершення Lifespan. Видаляємо webhook.")
+    await bot.delete_webhook()
+
+app = FastAPI(lifespan=lifespan)
 
 CHANNELS = {
     "kino": "@KinoTochkaUA",
@@ -289,16 +299,10 @@ WEBHOOK_PATH = "/webhook"
 WEBAPP_HOST = "0.0.0.0"
 WEBAPP_PORT = int(os.environ.get("PORT", 8000))
 
-async def on_startup(dp):
-    Bot.set_current(bot)  # <== сюди теж
-    logging.info("🚀 Стартуємо Webhook...")
-    await bot.set_webhook(WEBHOOK_URL + WEBHOOK_PATH)
-    logging.info(f"Webhook встановлено: {WEBHOOK_URL + WEBHOOK_PATH}")
 
 
-async def on_shutdown(dp):
-    logging.info("❌ Видаляємо webhook...")
-    await bot.delete_webhook()
+
+
 
 async def set_webhook_manually():
     webhook_url = WEBHOOK_URL + WEBHOOK_PATH
@@ -308,7 +312,8 @@ async def set_webhook_manually():
     else:
         logging.error("❌ Failed to set webhook manually")
 
+@app.get("/ping")
+async def ping():
+    return {"status": "alive"}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("bot:app", host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
