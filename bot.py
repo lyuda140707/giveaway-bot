@@ -46,7 +46,7 @@ app = FastAPI()
 
 CHANNELS = {
     "kino": "@KinoTochkaUA",
-    "films": "@KinoTochkaFilms"
+    "films": "@KinoTochkaFilms",
     "test": "@testbotKana"
 }
 
