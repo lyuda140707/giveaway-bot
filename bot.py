@@ -16,7 +16,7 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
 import urllib.parse
-
+import random
 
 logging.basicConfig(level=logging.INFO)
 
@@ -47,6 +47,7 @@ app = FastAPI()
 CHANNELS = {
     "kino": "@KinoTochkaUA",
     "films": "@KinoTochkaFilms"
+    "test": "@testbotKana"
 }
 
 @app.get("/")
@@ -210,29 +211,33 @@ async def handle_start(message: types.Message):
             )
             return  # 🛑 Зупиняємо, бо вже показали кнопки
 
-    # 🔻 Якщо користувач зайшов без рефералки
-    text = (
-        "🎉 Вітаю у розіграші Telegram Premium!\n\n"
-        "Підпишись на канал і запроси **мінімум 3 друзів**.\n"
-        "⚠️ Щойно всі вони теж підпишуться — ти автоматично потрапиш у список учасників!\n\n"
-        "Обери канал нижче, щоб отримати унікальне посилання:"
-    )
+# 🔻 Якщо користувач зайшов без рефералки — випадково обираємо канал
+channel_key = random.choice(list(CHANNELS.keys()))
+channel_username = CHANNELS[channel_key]
 
-    keyboard = InlineKeyboardMarkup(row_width=1)
-    for key, ch in CHANNELS.items():
-        ref_link = f"https://t.me/GiveawayKinoBot?start={key}_{user_id}"
-        share_text = (
-            f"🎁 Участь у розіграші Telegram Premium!\n\n"
-            f"🔗 Тисни тут:\n"
-            f"{ref_link}\n\n"
-            f"📌 Підпишись на {ch} — і запроси друзів!"
-        
-        )
-        encoded_text = urllib.parse.quote(share_text)
-        share_link = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={encoded_text}"
-        keyboard.add(InlineKeyboardButton(text=f"Поділитись через {ch}", url=share_link))
+ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}"
+share_text = (
+    f"🎁 Участь у розіграші Telegram Premium!\n\n"
+    f"🔗 Тисни тут:\n"
+    f"{ref_link}\n\n"
+    f"📌 Підпишись на {channel_username} — і запроси друзів!"
+)
+share_link = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={urllib.parse.quote(share_text)}"
 
-    await message.answer(text, reply_markup=keyboard)
+keyboard = InlineKeyboardMarkup().add(
+    InlineKeyboardButton(text=f"Поділитися через {channel_username}", url=share_link)
+)
+
+await message.answer(
+    "🎉 Вітаю у розіграші Telegram Premium!\n\n"
+    "Підпишись на канал і запроси **мінімум 3 друзів**.\n"
+    "⚠️ Щойно всі вони теж підпишуться — ти автоматично потрапиш у список учасників!\n\n"
+    "👇 Отримай своє унікальне посилання:",
+    reply_markup=keyboard
+)
+
+
+
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith("check_"))
