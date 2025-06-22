@@ -188,10 +188,11 @@ async def handle_start(message: types.Message):
                 f"💬 Натисни 👇 це посилання:\n"
                 f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}\n\n"
                 f"🟢 Бот усе пояснить:\n"
-                f"1️⃣ Підписка на канал\n"
+                f"1️⃣ Підписка на канал {channel_username}\n"
                 f"2️⃣ Запрошення друзів\n"
-                f"3️⃣ Участь у розіграші!"
-               
+                f"3️⃣ Участь у розіграші!\n\n"
+                f"🎬 Також дивись фільми безкоштовно у нашому кіно-боті:\n👉 https://t.me/UAKinoTochka_bot?startapp"
+                  
             )
             ref_link = f"https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}"
             share_link = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={urllib.parse.quote(share_text)}"
@@ -262,7 +263,8 @@ async def process_check_subscription(callback_query: types.CallbackQuery):
         share_text = (
             f"🎁 Telegram Premium чекає на тебе!\n"
             f"👉 Натисни: https://t.me/GiveawayKinoBot?start={channel_key}_{user_id}\n"
-            f"🎬 Підпишись і запрошуй друзів!"
+            f"📌 Підпишись на канал {channel_username} і запроси друзів!\n\n"
+            f"🎬 А ще можеш переглядати фільми українською у нашому боті:\n👉 https://t.me/UAKinoTochka_bot?startapp"
         )
         share_link = f"https://t.me/share/url?url={ref_link}&text={share_text}"
 
