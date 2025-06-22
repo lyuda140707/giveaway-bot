@@ -177,8 +177,8 @@ async def handle_start(message: types.Message):
                     if ref_row_num:
                         logging.info(f"✔️ ref_id {ref_id} вже є у таблиці — все добре")
                     else:
-                        logging.warning(f"⚠️ ref_id {ref_id} не знайдено у таблиці — не додаємо")
-                        ref_id = None  # ❗️Не додаємо вигаданого юзера
+                        logging.info(f"➕ ref_id {ref_id} ще не у таблиці — додаємо як реферала")
+                        await update_user_data(ref_id, None, channel_key, None)
             
             
             
